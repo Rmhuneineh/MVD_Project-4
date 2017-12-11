@@ -45,3 +45,53 @@ for i = 1:6
     plot(pNFx1, NFx2(1:6, i, 2), 'x-');
 end
 grid on;
+
+% BRAKING IN ACTUAL CONDITIONS
+% Calculating Kb
+Kb = (b - ux(2)*hG)/(l + ux(2)*hG - b);
+
+% Valve Limit Condition
+Fx2A = ux(2)*M*g*(a + hG*ux(2))/l;
+Fx1A = Kb*Fx2A;
+Fx2Ap = 0.9*Fx2A;
+Fx1Ap = Kb*Fx2Ap;
+Fx1B = ux(5)*M*g*(b - hG*ux(5))/l;
+Fx2B = ux(5)*M*g*(a + hG*ux(5))/l;
+
+% Calculating Kb'
+Kbp = (Fx1B - Fx1Ap)/(Fx2B - Fx2Ap);
+
+% Calculating Braking Efficiency
+yIntercept = Fx2Ap - Fx1Ap/Kbp;
+
+firstIncrement = Fx1Ap/30;
+newFx1(1:31) = 0:firstIncrement:Fx1Ap;
+newFx2(1:31) = newFx1(1:31)/Kb;
+
+secondIncrement = (Fx1B - Fx1Ap)/70;
+newFx1(32:101) = (Fx1Ap+secondIncrement):secondIncrement:Fx1B;
+newFx2(32:101) = newFx1(32:101)/Kbp + yIntercept;
+
+figure; hold on;
+plot(pNFx1, pNFx2, 'o-');
+plot(abs(newFx1(1:31)), abs(newFx2(1:31)), '--');
+plot(abs(newFx1(32:101)), abs(newFx2(32:101)), '--');
+
+
+for i = 1:101
+    newUx(i) = l/((M*g*b/newFx1(i)) - hG*(1 + newFx2(i)/newFx1(i)));
+end
+
+actualAcceleration = (newFx1 + newFx2)/M;
+idealAcceleration = newUx*g;
+
+brakingEfficiency = actualAcceleration./idealAcceleration;
+
+figure; hold on;
+plot(abs(newUx), brakingEfficiency);
+title('Braking Efficiency vs Longitudinal Slip');
+xlabel('Longitudinal Slip [-]');
+ylabel('Braking Efficiency [-]');
+grid on;
+xlim([0 1.2]);
+ylim([0.4 1.2]);
